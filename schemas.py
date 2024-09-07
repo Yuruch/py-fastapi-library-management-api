@@ -1,11 +1,11 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import date
 from typing import List, Optional
 
 
 class BookBase(BaseModel):
     title: str
-    summary: Optional[str] = None
+    summary: Optional[str] = Field(default=None)
     publication_date: date
 
 
@@ -17,13 +17,14 @@ class Book(BookBase):
     id: int
     author_id: int
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True
+    }
 
 
 class AuthorBase(BaseModel):
     name: str
-    bio: Optional[str] = None
+    bio: Optional[str] = Field(default=None)
 
 
 class AuthorCreate(AuthorBase):
@@ -32,7 +33,8 @@ class AuthorCreate(AuthorBase):
 
 class Author(AuthorBase):
     id: int
-    books: List[Book] = []
+    books: List[Book] = Field(default_factory=list)
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True
+    }

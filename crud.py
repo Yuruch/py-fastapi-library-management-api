@@ -1,16 +1,24 @@
-from fastapi import Query
+from sqlalchemy.future import select
 from sqlalchemy.orm import Session
 
 import models
 import schemas
 
 
-def get_authors(db: Session, skip: int = 0, limit: int = 100) -> Query:
-    query = db.query(models.Author).offset(skip).limit(limit)
-    return query.all()
+def get_authors(
+        db: Session,
+        skip: int = 0,
+        limit: int = 100
+) -> list[models.Author]:
+    query = select(models.Author).offset(skip).limit(limit)
+    result = db.execute(query)
+    return result.scalars().all()
 
 
-def create_author(db: Session, author: schemas.AuthorCreate) -> models.Author:
+def create_author(
+        db: Session,
+        author: schemas.AuthorCreate
+) -> models.Author:
     db_author = models.Author(name=author.name, bio=author.bio)
     db.add(db_author)
     db.commit()
@@ -19,22 +27,31 @@ def create_author(db: Session, author: schemas.AuthorCreate) -> models.Author:
     return db_author
 
 
-def get_author_by_name(db: Session, name: str) -> models.Author:
-    return db.query(models.Author).filter(models.Author.name == name).first()
+def get_author_by_name(db: Session, name: str) -> models.Author | None:
+    query = select(models.Author).filter(models.Author.name == name)
+    result = db.execute(query).scalar_one_or_none()
+    return result
 
 
-def get_author_by_id(db: Session, author_id: int) -> models.Author:
-    return db.query(models.Author).filter(models.Author.id == author_id).first()
+def get_author_by_id(db: Session, author_id: int) -> models.Author | None:
+    query = select(models.Author).filter(models.Author.id == author_id)
+    result = db.execute(query).scalar_one_or_none()
+    return result
 
 
 def get_books(
-    db: Session, author_id: int = None, skip: int = 0, limit: int = 100
-) -> Query:
-    queryset = db.query(models.Book).offset(skip).limit(limit)
+    db: Session,
+    author_id: int = None,
+    skip: int = 0,
+    limit: int = 100
+) -> list[models.Book]:
+    query = select(models.Book).offset(skip).limit(limit)
 
     if author_id:
-        queryset = queryset.filter(models.Book.author_id == author_id)
-    return queryset.all()
+        query = query.filter(models.Book.author_id == author_id)
+
+    result = db.execute(query).scalars().all()
+    return result
 
 
 def create_book(db: Session, book: schemas.BookCreate) -> models.Book:
