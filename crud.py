@@ -1,46 +1,49 @@
 from sqlalchemy.future import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import AsyncSession
 
 import models
 import schemas
 
 
-def get_authors(
-        db: Session,
+async def get_authors(
+        db: AsyncSession,
         skip: int = 0,
         limit: int = 100
 ) -> list[models.Author]:
     query = select(models.Author).offset(skip).limit(limit)
-    result = db.execute(query)
+    result = await db.execute(query)
     return result.scalars().all()
 
 
-def create_author(
-        db: Session,
+async def create_author(
+        db: AsyncSession,
         author: schemas.AuthorCreate
 ) -> models.Author:
     db_author = models.Author(name=author.name, bio=author.bio)
     db.add(db_author)
-    db.commit()
-    db.refresh(db_author)
+    await db.commit()
+    await db.refresh(db_author)
 
     return db_author
 
 
-def get_author_by_name(db: Session, name: str) -> models.Author | None:
+async def get_author_by_name(db: AsyncSession, name: str) -> models.Author | None:
     query = select(models.Author).filter(models.Author.name == name)
-    result = db.execute(query).scalar_one_or_none()
-    return result
+    result = await db.execute(query)
+    return result.scalar_one_or_none()
 
 
-def get_author_by_id(db: Session, author_id: int) -> models.Author | None:
+async def get_author_by_id(
+    db: AsyncSession,
+    author_id: int
+) -> models.Author | None:
     query = select(models.Author).filter(models.Author.id == author_id)
-    result = db.execute(query).scalar_one_or_none()
-    return result
+    result = await db.execute(query)
+    return result.scalar_one_or_none()
 
 
-def get_books(
-    db: Session,
+async def get_books(
+    db: AsyncSession,
     author_id: int = None,
     skip: int = 0,
     limit: int = 100
@@ -50,11 +53,11 @@ def get_books(
     if author_id:
         query = query.filter(models.Book.author_id == author_id)
 
-    result = db.execute(query).scalars().all()
-    return result
+    result = await db.execute(query)
+    return result.scalars().all()
 
 
-def create_book(db: Session, book: schemas.BookCreate) -> models.Book:
+async def create_book(db: AsyncSession, book: schemas.BookCreate) -> models.Book:
     db_book = models.Book(
         title=book.title,
         summary=book.summary,
@@ -62,7 +65,7 @@ def create_book(db: Session, book: schemas.BookCreate) -> models.Book:
         author_id=book.author_id,
     )
     db.add(db_book)
-    db.commit()
-    db.refresh(db_book)
+    await db.commit()
+    await db.refresh(db_book)
 
     return db_book
